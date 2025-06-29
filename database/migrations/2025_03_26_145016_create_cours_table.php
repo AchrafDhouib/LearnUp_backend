@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('creator_id')->nullable()->constrained('users')->onDelete('set null');
             $table->text('description')->nullable();
             $table->string('image',1024)->nullable();
+            $table->boolean('is_accepted')->nullable()->default(null);
             $table->timestamps();
         });
     }

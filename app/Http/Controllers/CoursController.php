@@ -34,7 +34,7 @@ class CoursController extends Controller
                 'creator_id' => $request->input('creator_id'),
                 'description' => $request->input('description'),
                 'image' => $request->input('image'),
-                'is_accepted' => 0,
+                'is_accepted' => null,
             ]);
             $course->save();
 
