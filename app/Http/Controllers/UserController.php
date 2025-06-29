@@ -48,7 +48,7 @@ class UserController extends Controller
         try {
             $role = $request->query('role');
 
-            $query = User::with('groups', 'userAnswers.passedExam'); // ❌ No need to eager load 'roles'
+            $query = User::with(['groups', 'userAnswers.passedExam', 'passedExams', 'roles']);
 
             if ($role) {
                 $query->whereHas('roles', function ($q) use ($role) {
@@ -68,9 +68,11 @@ class UserController extends Controller
                     'avatar' => $user->avatar,
                     'email' => $user->email,
                     'is_active' => $user->is_active,
-                    'roles' => $user->getRoleNames()->first(), // ✅ only role names
-                    'groups' => $user->groups,         // original groups
-                    'grouped_user_answers' => $user->userAnswers->groupBy('passed_exam_id'), // grouped answers
+                    'role' => $user->getRoleNames()->first(), // Single role name
+                    'groups' => $user->groups,
+                    'passed_exams' => $user->passedExams,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
                 ];
             });
 
@@ -131,7 +133,46 @@ class UserController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+            $user = User::with([
+                'groups', 
+                'passedExams.exam', 
+                'passedExams.certification',
+                'roles'
+            ])->findOrFail($id);
+
+            // For teachers, get groups they created and courses they created
+            if ($user->hasRole('teacher')) {
+                $user->load(['createdGroups.course', 'courses']);
+            }
+
+            // For students, get groups they joined and exams they passed
+            if ($user->hasRole('student')) {
+                $user->load(['groups', 'passedExams.exam', 'passedExams.certification']);
+            }
+
+            return response()->json([
+                'id' => $user->id,
+                'name' => $user->name,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar' => $user->avatar,
+                'email' => $user->email,
+                'is_active' => $user->is_active,
+                'role' => $user->getRoleNames()->first(),
+                'groups' => $user->groups,
+                'created_groups' => $user->createdGroups ?? [],
+                'passed_exams' => $user->passedExams,
+                'courses' => $user->courses ?? [],
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -139,7 +180,78 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+            $user = User::findOrFail($id);
+            
+            $validatedData = $request->validate([
+                'first_name' => ['sometimes', 'string', 'max:255'],
+                'last_name' => ['sometimes', 'string', 'max:255'],
+                'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+                'name' => ['sometimes', 'string', 'max:255', 'unique:users,name,' . $id],
+            ]);
+
+            $user->update($validatedData);
+
+            return response()->json([
+                'message' => 'User updated successfully!',
+                'user' => $user,
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Change user password.
+     */
+    public function changePassword(Request $request, string $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            
+            $validatedData = $request->validate([
+                'current_password' => ['required', 'string'],
+                'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+                'new_password_confirmation' => ['required', 'string'],
+            ]);
+
+            // Check if current password is correct
+            if (!Hash::check($validatedData['current_password'], $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Current password is incorrect',
+                ], 422);
+            }
+
+            // Update password
+            $user->update([
+                'password' => Hash::make($validatedData['new_password']),
+            ]);
+
+            return response()->json([
+                'message' => 'Password changed successfully!',
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function activate(string $id)

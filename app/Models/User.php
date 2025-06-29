@@ -71,6 +71,16 @@ class User extends Authenticatable
         return $this->belongsToMany(Group::class, 'user_groups', 'user_id', 'group_id');
     }
 
+    public function courses(): HasMany
+    {
+        return $this->hasMany(Cours::class, 'creator_id');
+    }
+
+    public function createdGroups(): HasMany
+    {
+        return $this->hasMany(Group::class, 'creator_id');
+    }
+
     public function scopeAnswersByExam($query, $examId)
     {
         return $query->whereHas('answers', function ($query) use ($examId) {
