@@ -24,11 +24,11 @@ class LessonController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request , $courseId)
     {
         try {
             $lesson = new Lesson([
-                'cour_id' => $request->input('cour_id'),
+                'cour_id' => $courseId,
                 'title' => $request->input('title'),
                 'description' => $request->input('description'),
                 'duration' => $request->input('duration'),
@@ -60,11 +60,17 @@ class LessonController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $courseId, $id)
     {
         try {
             $lesson = Lesson::findOrFail($id);
-            $lesson->update($request->all());
+            $lesson->update([
+                'title' => $request->input('title'),
+                'description' => $request->input('description'),
+                'duration' => $request->input('duration'),
+                'url_video' => $request->input('url_video'),
+                'url_pdf' => $request->input('url_pdf'),
+            ]);
 
             return response()->json($lesson);
         } catch (\Exception $e) {
