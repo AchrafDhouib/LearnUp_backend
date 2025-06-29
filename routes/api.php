@@ -73,10 +73,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/lessons', [LessonController::class, 'index']);
     Route::get('/lessons/{id}', [LessonController::class, 'show']);
-    Route::get('/lessons/course/{courseId}', [LessonController::class, 'getByCourse']);
-    Route::post('/lessons', [LessonController::class, 'store'])->middleware('role:admin|teacher');
-    Route::delete('/lessons/{id}', [LessonController::class, 'destroy'])->middleware('role:admin|teacher');
-    Route::put('/lessons/{id}', [LessonController::class, 'update'])->middleware('role:admin|teacher');
+    Route::get('courses/{courseId}/lessons', [LessonController::class, 'getByCourse']);
+    Route::post('courses/{courseId}/lessons', [LessonController::class, 'store'])->middleware('role:admin|teacher');
+    Route::delete('courses/{courseId}/lessons/{id}', [LessonController::class, 'destroy'])->middleware('role:admin|teacher');
+    Route::put('courses/{courseId}/lessons/{id}', [LessonController::class, 'update'])->middleware('role:admin|teacher');
 
     Route::get('/exams', [ExamsController::class, 'index']);
     Route::post('/exams', [ExamsController::class, 'store'])->middleware('role:admin|teacher');
