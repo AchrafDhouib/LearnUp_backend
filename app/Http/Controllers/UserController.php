@@ -58,6 +58,24 @@ class UserController extends Controller
 
             $users = $query->get();
 
+            // Debug logging for teachers and students
+            if ($role === 'teacher' || $role === 'student') {
+                \Illuminate\Support\Facades\Log::info($role . 's being returned:', [
+                    'count' => $users->count(),
+                    'users' => $users->map(function($user) {
+                        return [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'is_active' => $user->is_active,
+                            'role' => $user->getRoleNames()->first(),
+                            'groups' => $user->groups,
+                            'passed_exams' => $user->passedExams,
+                        ];
+                    })->toArray()
+                ]);
+            }
+
             // Transform users
             $users = $users->map(function ($user) {
                 return [
@@ -217,6 +235,50 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
+            
+            $validatedData = $request->validate([
+                'current_password' => ['required', 'string'],
+                'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+                'new_password_confirmation' => ['required', 'string'],
+            ]);
+
+            // Check if current password is correct
+            if (!Hash::check($validatedData['current_password'], $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Current password is incorrect',
+                ], 422);
+            }
+
+            // Update password
+            $user->update([
+                'password' => Hash::make($validatedData['new_password']),
+            ]);
+
+            return response()->json([
+                'message' => 'Password changed successfully!',
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Change own password.
+     */
+    public function changeOwnPassword(Request $request)
+    {
+        try {
+            $user = $request->user();
             
             $validatedData = $request->validate([
                 'current_password' => ['required', 'string'],

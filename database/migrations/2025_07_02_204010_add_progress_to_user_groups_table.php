@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('exams', function (Blueprint $table) {
-            $table->id();
-            $table->string('title')->nullable();
-            $table->string('description')->nullable();
-            $table->foreignId('cours_id')->nullable()->constrained('cours')->onDelete('set null');
-            $table->timestamps();
+        Schema::table('user_groups', function (Blueprint $table) {
+            $table->integer('progress')->default(0)->after('group_id');
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('exams');
+        Schema::table('user_groups', function (Blueprint $table) {
+            $table->dropColumn('progress');
+        });
     }
 };

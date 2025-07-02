@@ -14,7 +14,7 @@ class GroupController extends Controller
     public function index()
     {
         try {
-            $groups = Group::with('course', 'students', 'creator')->get();
+            $groups = Group::with('course', 'students:id,name,first_name,last_name,email,avatar', 'creator')->get();
 
             return response()->json($groups);
         } catch (\Exception $e) {
@@ -36,7 +36,6 @@ class GroupController extends Controller
                 'start_date' => $request->input('start_date'),
                 'end_date' => $request->input('end_date'),
                 'image' => $request->input('image'),
-                'price'  => $request->input('price'),
                 'max_students' => $request->input('max_students'),
             ]);
             $group->save();
@@ -53,7 +52,7 @@ class GroupController extends Controller
     public function show($id)
     {
         try {
-            $group = Group::with('course', 'students', 'creator')->findOrFail($id);
+            $group = Group::with('course', 'students:id,name,first_name,last_name,email,avatar', 'creator')->findOrFail($id);
 
             return response()->json($group);
         } catch (\Exception $e) {
@@ -101,9 +100,25 @@ class GroupController extends Controller
 
         try {
             $group = Group::findOrFail($groupId);
-            $group->groups()->syncWithoutDetaching([$request->user_id]);
+            $group->students()->syncWithoutDetaching([$request->user_id]);
 
             return response()->json(['message' => 'User added to group successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function removeUser(Request $request, $groupId)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        try {
+            $group = Group::findOrFail($groupId);
+            $group->students()->detach($request->user_id);
+
+            return response()->json(['message' => 'User removed from group successfully.'], 200);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -120,6 +135,19 @@ class GroupController extends Controller
             $user->groups()->detach($request->group_id);
 
             return response()->json(['message' => 'User removed from group successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getGroupsByCreator($creatorId)
+    {
+        try {
+            $groups = Group::with('course', 'students:id,name,first_name,last_name,email,avatar', 'creator')
+                ->where('creator_id', $creatorId)
+                ->get();
+
+            return response()->json($groups);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
