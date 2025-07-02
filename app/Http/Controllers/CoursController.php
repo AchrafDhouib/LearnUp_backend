@@ -10,10 +10,17 @@ class CoursController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $courses = Cours::with('speciality', 'lessons', 'exam', 'creator')->get();
+            $query = Cours::with('speciality', 'lessons', 'exam', 'creator');
+            
+            // If creator_id is provided, filter by creator
+            if ($request->has('creator_id')) {
+                $query->where('creator_id', $request->creator_id);
+            }
+            
+            $courses = $query->get();
 
             return response()->json($courses);
         } catch (\Exception $e) {
@@ -34,6 +41,8 @@ class CoursController extends Controller
                 'creator_id' => $request->input('creator_id'),
                 'description' => $request->input('description'),
                 'image' => $request->input('image'),
+                'price' => $request->input('price'),
+                'discount' => $request->input('discount'),
                 'is_accepted' => null,
             ]);
             $course->save();
@@ -51,6 +60,16 @@ class CoursController extends Controller
     {
         try {
             $course = Cours::with('speciality', 'lessons', 'exam', 'creator')->findOrFail($id);
+            
+            // Debug logging
+            \Illuminate\Support\Facades\Log::info('Course data being returned:', [
+                'course_id' => $course->id,
+                'course_name' => $course->name,
+                'speciality_id' => $course->speciality_id,
+                'speciality_name' => $course->speciality ? $course->speciality->name : 'null',
+                'creator_id' => $course->creator_id,
+                'creator_name' => $course->creator ? $course->creator->name : 'null',
+            ]);
 
             return response()->json($course);
         } catch (\Exception $e) {
@@ -132,5 +151,18 @@ class CoursController extends Controller
             'message' => 'Course rejected successfully!',
             'course' => $course,
         ], 202);
+    }
+
+    public function getByCreator($creatorId)
+    {
+        try {
+            $courses = Cours::where('creator_id', $creatorId)
+                ->with('speciality', 'lessons', 'exam', 'creator')
+                ->get();
+
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            return response()->json("'error' {$e->getMessage()}, {$e->getCode()}");
+        }
     }
 }

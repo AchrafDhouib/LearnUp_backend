@@ -20,6 +20,8 @@ use App\Http\Controllers\SpecialityController;
 use App\Http\Controllers\UserAnswerController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserGroupController;
+use App\Http\Controllers\StudentCourseController;
+use App\Http\Controllers\CourseReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -50,10 +52,14 @@ Route::get('/desciplines/{id}', [DisciplineController::class, 'show']);
 Route::get('/specialities', [SpecialityController::class, 'index']);
 Route::get('/specialities/{id}', [SpecialityController::class, 'show']);
 
-Route::get('/courses', [CoursController::class, 'index']);
-Route::get('/courses/{id}', [CoursController::class, 'show']);
-Route::get('/courses/speciality/{specialityId}', [CoursController::class, 'getBySpeciality']);
-Route::get('/courses/discipline/{disciplineId}', [CoursController::class, 'getByDiscipline']);
+    Route::get('/courses', [CoursController::class, 'index']);
+    Route::get('/courses/{id}', [CoursController::class, 'show']);
+    Route::get('/courses/speciality/{specialityId}', [CoursController::class, 'getBySpeciality']);
+    Route::get('/courses/discipline/{disciplineId}', [CoursController::class, 'getByDiscipline']);
+    Route::get('/courses/creator/{creatorId}', [CoursController::class, 'getByCreator']);
+    
+    // Course reviews (public read, authenticated write)
+    Route::get('/courses/{courseId}/reviews', [CourseReviewController::class, 'getCourseReviews']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
@@ -89,13 +95,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/groups/{id}', [GroupController::class, 'show']);
     Route::delete('/groups/{id}', [GroupController::class, 'destroy'])->middleware('role:admin|teacher');
     Route::put('/groups/{id}', [GroupController::class, 'update'])->middleware('role:admin|teacher');
-    Route::post('/groups/{groupId}/add-user', [GroupController::class, 'addUser']);
-    Route::post('/groups/{groupId}/remove-user', [GroupController::class, 'removeUser']);
+    Route::post('/groups/{groupId}/add-user', [GroupController::class, 'addUser'])->middleware('role:admin|teacher');;
+    Route::post('/groups/{groupId}/remove-user', [GroupController::class, 'removeUser'])->middleware('role:admin|teacher');
+    Route::get('/groups/creator/{creatorId}', [GroupController::class, 'getGroupsByCreator']);
 
     Route::get('/users/{id}', [UserController::class, 'show'])->middleware('role:admin');
     Route::post('/users', [UserController::class, 'store'])->middleware('role:admin');
     Route::put('/users/{id}', [UserController::class, 'update'])->middleware('role:admin');
     Route::patch('/users/{id}/change-password', [UserController::class, 'changePassword'])->middleware('role:admin');
+    Route::patch('/auth/change-password', [UserController::class, 'changeOwnPassword']);
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->middleware('role:admin');
     Route::post('/users/{userId}/join-group', [UserController::class, 'joinToGroup']);
     Route::post('/users/{userId}/leave-group', [UserController::class, 'leaveGroup']);
@@ -135,5 +143,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/user-answers', [UserAnswerController::class,'store']);
     Route::put('/user-answers/{id}', [UserAnswerController::class,'update']);
     Route::delete('/user-answers/{id}', [UserAnswerController::class,'destroy']);
+
+    // Student Course Management
+    Route::get('/student/courses', [StudentCourseController::class, 'getMyCourses']);
+    Route::get('/student/courses/stats', [StudentCourseController::class, 'getEnrollmentStats']);
+    Route::post('/student/courses/enroll', [StudentCourseController::class, 'enrollInCourse']);
+    Route::patch('/student/courses/{courseId}/progress', [StudentCourseController::class, 'updateProgress']);
+    Route::patch('/student/courses/{courseId}/complete', [StudentCourseController::class, 'markAsCompleted']);
+    Route::post('/student/courses/{courseId}/complete-lesson', [StudentCourseController::class, 'completeLesson']);
+    Route::delete('/student/courses/{courseId}/drop', [StudentCourseController::class, 'dropCourse']);
+    Route::get('/students/{studentId}/courses', [StudentCourseController::class, 'getStudentCourses'])->middleware('role:admin|teacher');
+
+    // Course reviews (authenticated write)
+    Route::post('/courses/{courseId}/reviews', [CourseReviewController::class, 'createReview']);
+    Route::put('/courses/{courseId}/reviews/{reviewId}', [CourseReviewController::class, 'updateReview']);
+    Route::delete('/courses/{courseId}/reviews/{reviewId}', [CourseReviewController::class, 'deleteReview']);
 
 });

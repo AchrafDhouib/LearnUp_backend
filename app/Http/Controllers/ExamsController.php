@@ -13,7 +13,7 @@ class ExamsController extends Controller
     public function index()
     {
         try {
-            $exams = Exams::with('course', 'questions')->get();
+            $exams = Exams::with('course', 'questions.answers')->get();
 
             return response()->json($exams);
         } catch (\Exception $e) {
@@ -28,8 +28,9 @@ class ExamsController extends Controller
     {
         try {
             $exam = new Exams([
+                'title' => $request->input('title'),
                 'description' => $request->input('description'),
-                'cour_id' => $request->input('cour_id'),
+                'cours_id' => $request->input('cours_id'),
             ]);
             $exam->save();
 
@@ -45,7 +46,7 @@ class ExamsController extends Controller
     public function show($id)
     {
         try {
-            $exam = Exams::with('course', 'questions')->findOrFail($id);
+            $exam = Exams::with('course', 'questions.answers')->findOrFail($id);
 
             return response()->json($exam);
         } catch (\Exception $e) {
