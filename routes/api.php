@@ -52,7 +52,14 @@ Route::get('/desciplines/{id}', [DisciplineController::class, 'show']);
 Route::get('/specialities', [SpecialityController::class, 'index']);
 Route::get('/specialities/{id}', [SpecialityController::class, 'show']);
 
+// Test route for exam data
+Route::get('/test/exam/{id}', function ($id) {
+    $exam = \App\Models\Exams::with('questions.answers')->find($id);
+    return response()->json($exam);
+});
+
     Route::get('/courses', [CoursController::class, 'index']);
+    Route::get('/courses/accepted', [CoursController::class, 'getAcceptedCourses']);
     Route::get('/courses/{id}', [CoursController::class, 'show']);
     Route::get('/courses/speciality/{specialityId}', [CoursController::class, 'getBySpeciality']);
     Route::get('/courses/discipline/{disciplineId}', [CoursController::class, 'getByDiscipline']);
@@ -115,9 +122,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/passed-exams', [PassedExamsController::class,'index']);
     Route::get('/passed-exams/{id}', [PassedExamsController::class,'show']);
-    Route::post('/passed-exams/{user_id}/{exam_id}', [PassedExamsController::class, 'store']);
-    Route::put('/passed-exams/{id}/{score}', [PassedExamsController::class, 'update']);
+    Route::post('/passed-exams', [PassedExamsController::class, 'store']);
+    Route::put('/passed-exams/{id}', [PassedExamsController::class, 'update']);
     Route::delete('/passed-exams/{id}', [PassedExamsController::class,'destroy']);
+    Route::get('/passed-exams/{id}/user-answers', [PassedExamsController::class, 'getUserAnswers']);
 
     Route::get('/certifications', [CertificationController::class,'index']);
     Route::get('/certifications/{id}', [CertificationController::class,'show']);
@@ -160,3 +168,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/courses/{courseId}/reviews/{reviewId}', [CourseReviewController::class, 'deleteReview']);
 
 });
+
+

@@ -13,7 +13,7 @@ class CoursController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Cours::with('speciality', 'lessons', 'exam', 'creator');
+            $query = Cours::with('speciality', 'lessons', 'exam.questions.answers', 'creator');
             
             // If creator_id is provided, filter by creator
             if ($request->has('creator_id')) {
@@ -21,6 +21,13 @@ class CoursController extends Controller
             }
             
             $courses = $query->get();
+
+            // Add student count, rating, and reviews count to each course
+            $courses->each(function ($course) {
+                $course->students_count = $course->getTotalStudentsCount();
+                $course->rating = $course->getAverageRating();
+                $course->total_reviews = $course->getReviewsCount();
+            });
 
             return response()->json($courses);
         } catch (\Exception $e) {
@@ -59,7 +66,12 @@ class CoursController extends Controller
     public function show($id)
     {
         try {
-            $course = Cours::with('speciality', 'lessons', 'exam', 'creator')->findOrFail($id);
+            $course = Cours::with('speciality', 'lessons', 'exam.questions.answers', 'creator')->findOrFail($id);
+            
+            // Add student count, rating, and reviews count
+            $course->students_count = $course->getTotalStudentsCount();
+            $course->rating = $course->getAverageRating();
+            $course->total_reviews = $course->getReviewsCount();
             
             // Debug logging
             \Illuminate\Support\Facades\Log::info('Course data being returned:', [
@@ -69,6 +81,9 @@ class CoursController extends Controller
                 'speciality_name' => $course->speciality ? $course->speciality->name : 'null',
                 'creator_id' => $course->creator_id,
                 'creator_name' => $course->creator ? $course->creator->name : 'null',
+                'students_count' => $course->students_count,
+                'rating' => $course->rating,
+                'total_reviews' => $course->total_reviews,
             ]);
 
             return response()->json($course);
@@ -112,7 +127,14 @@ class CoursController extends Controller
     public function getBySpeciality($specialityId)
     {
         try {
-            $courses = Cours::bySpecialityId($specialityId)->with('speciality' ,'lessons', 'exam')->get();
+            $courses = Cours::bySpecialityId($specialityId)->with('speciality' ,'lessons', 'exam.questions.answers')->get();
+
+            // Add student count, rating, and reviews count to each course
+            $courses->each(function ($course) {
+                $course->students_count = $course->getTotalStudentsCount();
+                $course->rating = $course->getAverageRating();
+                $course->total_reviews = $course->getReviewsCount();
+            });
 
             return response()->json($courses);
         } catch (\Exception $e) {
@@ -123,7 +145,14 @@ class CoursController extends Controller
     public function getByDiscipline($disciplineId)
     {
         try {
-            $courses = Cours::byDisciplineId($disciplineId)->with('speciality', 'lessons', 'exam')->get();
+            $courses = Cours::byDisciplineId($disciplineId)->with('speciality', 'lessons', 'exam.questions.answers')->get();
+
+            // Add student count, rating, and reviews count to each course
+            $courses->each(function ($course) {
+                $course->students_count = $course->getTotalStudentsCount();
+                $course->rating = $course->getAverageRating();
+                $course->total_reviews = $course->getReviewsCount();
+            });
 
             return response()->json($courses);
         } catch (\Exception $e) {
@@ -157,12 +186,48 @@ class CoursController extends Controller
     {
         try {
             $courses = Cours::where('creator_id', $creatorId)
-                ->with('speciality', 'lessons', 'exam', 'creator')
+                ->with('speciality', 'lessons', 'exam.questions.answers', 'creator')
                 ->get();
+
+            // Add student count, rating, and reviews count to each course
+            $courses->each(function ($course) {
+                $course->students_count = $course->getTotalStudentsCount();
+                $course->rating = $course->getAverageRating();
+                $course->total_reviews = $course->getReviewsCount();
+            });
 
             return response()->json($courses);
         } catch (\Exception $e) {
             return response()->json("'error' {$e->getMessage()}, {$e->getCode()}");
+        }
+    }
+
+    /**
+     * Get only accepted courses for public display
+     */
+    public function getAcceptedCourses(Request $request)
+    {
+        try {
+            $query = Cours::with('speciality', 'lessons', 'exam.questions.answers', 'creator')
+                ->where('is_accepted', 1);
+            
+            // If creator_id is provided, filter by creator
+            if ($request->has('creator_id')) {
+                $query->where('creator_id', $request->creator_id);
+            }
+            
+            $courses = $query->get();
+
+            // Add student count, rating, and reviews count to each course
+            $courses->each(function ($course) {
+                $course->students_count = $course->getTotalStudentsCount();
+                $course->rating = $course->getAverageRating();
+                $course->total_reviews = $course->getReviewsCount();
+            });
+
+            return response()->json($courses);
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage());
         }
     }
 }

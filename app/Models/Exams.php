@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Exams extends Model
 {
-    protected $fillable = ['title', 'description', 'cours_id'];
+    protected $fillable = ['title', 'description', 'cours_id', 'duration'];
 
     public function course(): BelongsTo
     {
@@ -17,6 +17,6 @@ class Exams extends Model
 
     public function questions(): HasMany
     {
-        return $this->hasMany(Question::class);
+        return $this->hasMany(Question::class, 'exams_id');
     }
 }

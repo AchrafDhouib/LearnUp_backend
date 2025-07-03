@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Cours extends Model
 {
-    protected $fillable = ['name', 'cours_url','speciality_id', 'creator_id', 'description', 'image', 'is_accepted', 'price', 'discount'];
+    protected $fillable = ['name', 'cours_url','speciality_id', 'creator_id', 'description', 'image', 'is_accepted', 'price', 'discount', 'required_score'];
 
     public function speciality()
     {
@@ -113,6 +113,36 @@ class Cours extends Model
         $uniqueStudents = $allStudents->unique('id')->values();
 
         return $uniqueStudents;
+    }
+
+    public function getTotalStudentsCount()
+    {
+        // Combine all counts, removing duplicates
+        $allStudentIds = collect();
+        
+        // Add direct enrollments
+        $directStudentIds = $this->enrolledStudents()->active()->pluck('user_id');
+        $allStudentIds = $allStudentIds->concat($directStudentIds);
+        
+        // Add group enrollments
+        $groupStudentIds = $this->groups()
+            ->with('students:id')
+            ->get()
+            ->flatMap(function ($group) {
+                return $group->students->pluck('id');
+            });
+        $allStudentIds = $allStudentIds->concat($groupStudentIds);
+        
+        // Add user group enrollments
+        $userGroupStudentIds = $this->groups()
+            ->with('userGroups.user:id')
+            ->get()
+            ->flatMap(function ($group) {
+                return $group->userGroups->pluck('user.id');
+            });
+        $allStudentIds = $allStudentIds->concat($userGroupStudentIds);
+
+        return $allStudentIds->unique()->count();
     }
 
     public function scopeBySpecialityId($query, $specialityId)

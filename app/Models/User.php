@@ -90,7 +90,7 @@ class User extends Authenticatable
     {
         // Get courses via direct enrollment
         $directEnrollments = $this->enrolledCourses()
-            ->with('course.speciality', 'course.creator')
+            ->with('course.speciality', 'course.creator', 'course.exam.questions.answers')
             ->active()
             ->get()
             ->map(function ($enrollment) {
@@ -102,8 +102,10 @@ class User extends Authenticatable
                     'cours_url' => $enrollment->course->cours_url,
                     'price' => $enrollment->course->price,
                     'discount' => $enrollment->course->discount,
+                    'required_score' => $enrollment->course->required_score,
                     'speciality' => $enrollment->course->speciality,
                     'creator' => $enrollment->course->creator,
+                    'exam' => $enrollment->course->exam,
                     'enrollment_type' => 'direct',
                     'enrolled_at' => $enrollment->enrolled_at,
                     'progress' => $enrollment->progress,
@@ -114,7 +116,7 @@ class User extends Authenticatable
 
         // Get courses via group enrollment
         $groupEnrollments = $this->groups()
-            ->with('course.speciality', 'course.creator')
+            ->with('course.speciality', 'course.creator', 'course.exam.questions.answers')
             ->get()
             ->map(function ($group) {
                 // Get the user's progress for this group
@@ -129,8 +131,10 @@ class User extends Authenticatable
                     'cours_url' => $group->course->cours_url,
                     'price' => $group->course->price,
                     'discount' => $group->course->discount,
+                    'required_score' => $group->course->required_score,
                     'speciality' => $group->course->speciality,
                     'creator' => $group->course->creator,
+                    'exam' => $group->course->exam,
                     'enrollment_type' => 'group',
                     'enrolled_at' => $group->created_at,
                     'progress' => $progress,
