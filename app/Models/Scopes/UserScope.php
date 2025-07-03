@@ -30,7 +30,10 @@ class UserScope implements Scope
 
         if ($user->hasRole('student')) {
             $builder->where('user_id', $user->id);
+            return;
         }
+        
+        // If user doesn't have any of the above roles, deny access
         $builder->whereRaw('1 = 0');
     }
 }

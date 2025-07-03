@@ -11,4 +11,13 @@ class UserGroup extends Model
 {
     protected $fillable = ['group_id', 'user_id'];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function group()
+    {
+        return $this->belongsTo(Group::class, 'group_id');
+    }
 }

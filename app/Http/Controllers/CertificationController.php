@@ -12,7 +12,7 @@ class CertificationController extends Controller
     public function index()
     {
         try {
-            $certifications = Certification::with('passedExam')->get();
+            $certifications = Certification::with('passedExam.exam.course.creator')->get();
 
             return response()->json($certifications);
         } catch (\Exception $e) {
@@ -43,7 +43,7 @@ class CertificationController extends Controller
     public function show($id)
     {
         try {
-            $certification = Certification::with('passedExam')->findOrFail($id);
+            $certification = Certification::with('passedExam.exam.course.creator')->findOrFail($id);
 
             return response()->json($certification);
         } catch (\Exception $e) {

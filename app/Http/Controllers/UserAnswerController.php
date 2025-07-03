@@ -13,7 +13,7 @@ class UserAnswerController extends Controller
     public function index()
     {
         try {
-            $userAnswers = UserAnswer::with('passedExam', 'question', 'answer')->get();
+            $userAnswers = UserAnswer::with('passedExam', 'question', 'answer', 'user')->get();
 
             return response()->json($userAnswers);
         } catch (\Exception $e) {
@@ -27,17 +27,19 @@ class UserAnswerController extends Controller
     public function store(Request $request)
     {
         try {
+            $user = $request->user();
+            
             $userAnswer = new UserAnswer([
                 'passed_exam_id' => $request->input('passed_exam_id'),
                 'question_id' => $request->input('question_id'),
                 'answer_id' => $request->input('answer_id'),
-                'user_id' => $request->input('user_id'),
+                'user_id' => $user->id,
             ]);
             $userAnswer->save();
 
-            return response()->json($userAnswer);
+            return response()->json($userAnswer->load('question', 'answer'));
         } catch (\Exception $e) {
-            return response()->json("'error' {$e->getMessage()}, {$e->getCode()}");
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -47,11 +49,11 @@ class UserAnswerController extends Controller
     public function show($id)
     {
         try {
-            $userAnswer = UserAnswer::with('passedExam', 'question', 'answer')->findOrFail($id);
+            $userAnswer = UserAnswer::with('passedExam', 'question', 'answer', 'user')->findOrFail($id);
 
             return response()->json($userAnswer);
         } catch (\Exception $e) {
-            return response()->json("'error' {$e->getMessage()}, {$e->getCode()}");
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
@@ -85,5 +87,24 @@ class UserAnswerController extends Controller
             return response()->json("'error' {$e->getMessage()}, {$e->getCode()}");
         }
 
+    }
+
+    /**
+     * Get user answers for a specific passed exam
+     */
+    public function getByPassedExam($passedExamId)
+    {
+        try {
+            $userAnswers = UserAnswer::with([
+                'question.answers',
+                'answer'
+            ])
+            ->where('passed_exam_id', $passedExamId)
+            ->get();
+
+            return response()->json($userAnswers);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }
