@@ -29,7 +29,7 @@ class AuthenticatedTeacherSessionController extends Controller
             ], 401);
         }
 
-        if (!$user->hasRole('teacher')) {
+        if (!$user->hasRole('teacher') || !$user->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',

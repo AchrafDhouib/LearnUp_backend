@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 #[ScopedBy([UserScope::class])]
 class UserGroup extends Model
 {
-    protected $fillable = ['group_id', 'user_id'];
+    protected $fillable = ['group_id', 'user_id', 'progress'];
 
     public function user()
     {

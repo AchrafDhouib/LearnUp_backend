@@ -29,7 +29,7 @@ class AuthenticatedStudentSessionController extends Controller
             ], 401);
         }
 
-        if (!$user->hasRole('student')) {
+        if (!$user->hasRole('student') || !$user->is_active) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
